@@ -1,0 +1,3 @@
+[submodule "external/deribit-api-clients"]
+	path = external/deribit-api-clients
+	url = https://github.com/kant2002/deribit-api-clients/
