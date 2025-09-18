@@ -1,8 +1,13 @@
 // buy.ts
-import { PrivateApi } from "../../../../external/deribit-api-clients/typescript-node/api/privateApi";
+import { PrivateApi } from "@deribit/api/privateApi";
+
 import { getTicker } from "./getTicker";
 
-export async function buyFutureBTC(btcValue: number): Promise<number> {
+function getResult<T = any>(body: unknown): T {
+  return (body as any)?.result as T;
+}
+
+export async function buyFutureBTC(btcValue: number): Promise<number | undefined> {
   try {
     const ticker = await getTicker("BTC-PERPETUAL");
     const usdValue = Math.max(10, Math.floor(ticker.last_price * btcValue / 10) * 10);
@@ -22,10 +27,11 @@ export async function buyFutureBTC(btcValue: number): Promise<number> {
       // You can also pass: price, timeInForce, postOnly, reduceOnly, etc.
     );
 
+    const result = getResult(body);
     const orderId =
-      body?.result?.order?.order_id ??
-      body?.result?.order_id ??
-      body?.result?.trades?.[0]?.order_id;
+      result.order?.order_id ??
+      result.order_id ??
+      result.trades?.[0]?.order_id;
 
     return orderId;
   } catch (err) {

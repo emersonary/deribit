@@ -1,11 +1,11 @@
 // api/getTicker.ts
 import { Ticker } from "@goldie/models";
-import { PublicApi } from "../../../../external/deribit-api-clients/typescript-node/api";
+import { PublicApi } from "@deribit/api/publicApi";
 
 export async function getTicker(instrumentName: string): Promise<Ticker> {
   const client = new PublicApi();
 
-  const now = Date.now();
+  const now = new Date();
   const { body } = await client.publicTickerGet(instrumentName);
 
   // Deribit SDK often wraps responses inside `result`

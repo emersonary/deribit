@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: pg
+    environment:
+      POSTGRES_DB: deribit
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: oce45ano
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    # choose ONE volume style:
+    # A) named volume (simpler)
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    # B) or host path on an attached disk (uncomment and adjust)
+    # volumes:
+    #   - /mnt/pgdata:/var/lib/postgresql/data
+    # optional tuning files (you can skip these lines if you don’t have them):
+    #   - ./ops/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    #   - ./ops/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    # command: ["-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d deribit"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/node-app/Dockerfile
+    env_file:
+      - ./apps/node-app/.env
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      # IMPORTANT: inside the compose network, use service DNS, not 127.0.0.1
+      # If using pgbouncer:
+      DATABASE_URL: postgres://postgres:oce45ano@db:5432/deribit
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/react-app
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:

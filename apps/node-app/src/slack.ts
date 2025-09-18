@@ -6,7 +6,7 @@ import {
 } from "./slackAPI"; // path to the file
 
 
-export async function sendSlackMessage(orderType, instrumentName: string, amount, equity, fillPrice: number) {
+export async function sendSlackMessage(orderType: string, instrumentName: string, amount: number, equity: number, fillPrice: number) {
   // Create controller
   const api = new CtrlSlackAPI();
 

@@ -1,5 +1,5 @@
 // auth.ts
-import { AuthenticationApi } from "../../../../external/deribit-api-clients/typescript-node/api/authenticationApi";
+import { AuthenticationApi } from "@deribit/api/authenticationApi";
 import 'dotenv/config';
 
 type TokenBundle = {

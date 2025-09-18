@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@goldie/models": "1.0.0"
+    "@goldie/models": "file:../../packages/models"
   }
 }

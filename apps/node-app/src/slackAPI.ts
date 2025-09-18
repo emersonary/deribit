@@ -138,18 +138,21 @@ export class CtrlSlackAPI {
         String.fromCharCode(parseInt(hex, 16))
       );
 
+    const authToken = this.token
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: authToken } : {})
+    };
+
     const res = await fetch(this.endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: this.token,
-      },
+      headers,
       body: bodyStr,
     });
 
     const text = await res.text();
     try {
-      const data = JSON.parse(text); a
+      const data = JSON.parse(text);
       return data.ok === true;
     } catch {
       return text.includes('"ok":true');
