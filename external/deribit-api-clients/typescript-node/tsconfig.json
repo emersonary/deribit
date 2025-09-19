@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2019",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "api/**/*",
+    "model/**/*",
+    "index.ts",
+    "src/**/*",
+    "types/**/*.d.ts"
+  ]
+}

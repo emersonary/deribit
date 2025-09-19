@@ -1,0 +1,20 @@
+﻿export * from './accountManagementApi';
+import { AccountManagementApi } from './accountManagementApi';
+export * from './authenticationApi';
+import { AuthenticationApi } from './authenticationApi';
+export * from './internalApi';
+import { InternalApi } from './internalApi';
+export * from './marketDataApi';
+import { MarketDataApi } from './marketDataApi';
+export * from './privateApi';
+import { PrivateApi } from './privateApi';
+export * from './publicApi';
+import { PublicApi } from './publicApi';
+export * from './supportingApi';
+import { SupportingApi } from './supportingApi';
+export * from './tradingApi';
+import { TradingApi } from './tradingApi';
+export * from './walletApi';
+import { WalletApi } from './walletApi';
+export const APIS = [AccountManagementApi, AuthenticationApi, InternalApi, MarketDataApi, PrivateApi, PublicApi, SupportingApi, TradingApi, WalletApi];
+
