@@ -3,7 +3,6 @@
   "name": "goldie-monorepo",
   "workspaces": [
     "packages/*",
-    "external/*",
     "apps/*"
   ],
   "devDependencies": {
