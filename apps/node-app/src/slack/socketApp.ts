@@ -47,20 +47,20 @@ export async function startSlackSocket() {
     console.log("responding " + command.text + " slack command");
     await ack();
     const sub = (command.text || "").trim().toLowerCase();
-    if (!sub || sub === "summary") {
+    if (!sub || sub === "summ") {
       await respond({ response_type: "in_channel", blocks: buildBlocks() });
     } else {
-      await respond({ response_type: "ephemeral", text: "Usage: `/deribit summary`" });
+      await respond({ response_type: "ephemeral", text: "Usage: `/deribit summ`" });
     }
   });
 
   // Option B: App mentions (@DeribitBot summary)
   app.event("app_mention", async ({ event, say }) => {
     const text = (event as any).text?.toLowerCase() ?? "";
-    if (text.includes("summary")) {
+    if (text.includes("summ")) {
       await say({ blocks: buildBlocks() });
     } else {
-      await say("Try `summary`.");
+      await say("Try `summ`.");
     }
   });
 
