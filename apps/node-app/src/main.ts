@@ -8,6 +8,14 @@ function parseBool(envVar?: string): boolean {
   return envVar?.toLowerCase() === "true";
 }
 
+let schedulerStarted = false;
+
+export async function startScheduler(blockOrders: boolean) {
+  if (schedulerStarted) return;            // 👈 prevents accidental double start
+  schedulerStarted = true;
+  scheduleNextMinuteOverlap(blockOrders);
+}
+
 async function start() {
   const port = Number(process.env.PORT || 8080);
   const app = createServer();
@@ -21,7 +29,7 @@ async function start() {
   const blockOrders = parseBool(process.env.BLOCK_ORDERS);
   if (blockOrders) console.log("Orders are blocked");
 
-  scheduleNextMinuteOverlap(blockOrders).catch(err =>
+  startScheduler(blockOrders).catch(err =>
     console.error("Deribit cycle failed:", err)
   );
 

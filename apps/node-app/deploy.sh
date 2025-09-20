@@ -36,7 +36,9 @@ else
 fi
 
 # Restart service (no-password sudo expected)
-sudo -n systemctl restart "$SERVICE"
+sudo -n systemctl stop "$SERVICE"
+sleep 1
+sudo -n systemctl start "$SERVICE"
 sudo -n systemctl is-active "$SERVICE"
 sudo -n systemctl status "$SERVICE" --no-pager -l | tail -n 50
 
