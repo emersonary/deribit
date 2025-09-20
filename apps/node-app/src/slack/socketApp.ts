@@ -4,8 +4,8 @@ import { getLastAccountSummary } from "../state/lastAccountSummary";
 function fmt(n: number | null | undefined, locale = "en-US") {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
   return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
     useGrouping: true,
   }).format(n);
 }
