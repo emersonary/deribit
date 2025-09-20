@@ -1,33 +1,43 @@
-sudo tee /opt/deribit/apps/node-app/deploy.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
+
 APP_DIR="/opt/deribit/apps/node-app"
 SERVICE="node-app"
 
+# log everything
+exec > >(tee -a "$APP_DIR/deploy.log") 2>&1
+echo "=== DEPLOY $(date -u) on $(hostname) ($(hostname -I)) ==="
+pwd || true
+whoami || true
+
 cd "$APP_DIR"
 
-# Get latest code for main
+# Show repo state
+git remote -v
+git rev-parse --abbrev-ref HEAD || true
+git log -1 --oneline || true
+
+# Fetch newest main and hard reset
 git fetch origin
 git reset --hard origin/main
 
-# Install Node deps; prefer clean install if lockfile exists
+# Node deps/build if npm exists
 if command -v npm >/dev/null 2>&1; then
   if [ -f package-lock.json ]; then
     npm ci || npm install
   else
     npm install
   fi
-  # Build if you have a build script
-  if npm run | grep -qE '^\s*build'; then
+  if npm run | grep -qE '^\s*build\b'; then
     npm run build
   fi
+else
+  echo "WARN: npm not found in PATH"
 fi
 
-# Restart service
-sudo systemctl restart "$SERVICE"
+# Restart service (no-password sudo expected)
+sudo -n systemctl restart "$SERVICE"
+sudo -n systemctl is-active "$SERVICE"
+sudo -n systemctl status "$SERVICE" --no-pager -l | tail -n 50
 
-# Optional: quick health/status dump
-sudo systemctl --no-pager --lines=20 status "$SERVICE"
-EOF
-
-sudo chmod +x /opt/deribit/apps/node-app/deploy.sh
+echo "=== DONE $(date -u) ==="
