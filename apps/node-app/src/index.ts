@@ -138,11 +138,11 @@ function parseBool(envVar?: string): boolean {
 }
 function main() {
   console.log("Initializing application");
-  const blockOrders = parseBool(process.env["BLOCK_ORDERS"])
-  if (blockOrders) {
-    console.log("Orders are blocked");
-  }
-  scheduleNextMinuteOverlap(blockOrders);
+  // const blockOrders = parseBool(process.env["BLOCK_ORDERS"])
+  // if (blockOrders) {
+  //   console.log("Orders are blocked");
+  // }
+  //scheduleNextMinuteOverlap(blockOrders);
 }
 
 main();
