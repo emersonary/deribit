@@ -75,18 +75,17 @@ async function deribitVerificationCycle(blockOrders: boolean) {
       now,
     ]);
 
+    const diff = btcSummary.delta_total + btcSummary.equity;
 
     console.log("Snapshot ID:", rows[0].func_upsert_account_snapshot,
       "usd_equity:",
       formatCurrency(usdEquity),
       "delta:",
       btcSummary.delta_total?.toFixed(5),
-      "price:",
-      formatCurrency(ticker.last_price));
+      "diff:",
+      diff);
 
     if (!blockOrders) {
-
-      const diff = btcSummary.delta_total + btcSummary.equity;
 
       // Hedge logic
       if (diff < - 0.3) {
