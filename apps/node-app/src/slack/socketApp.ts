@@ -4,8 +4,8 @@ import { getLastAccountSummary } from "../state/lastAccountSummary";
 function fmt(n: number | null | undefined, locale = "en-US") {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
   return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
     useGrouping: true,
   }).format(n);
 }
@@ -23,7 +23,7 @@ function buildBlocks() {
       fields: [
         { type: "mrkdwn", text: `*Last Price*\n$${fmt(snap.last_price)}` },
         { type: "mrkdwn", text: `*Equity (USD)*\n$${fmt(snap.equity_usd)}` },
-        { type: "mrkdwn", text: `*Delta Total*\n$${fmt(snap.delta_total)}` },
+        { type: "mrkdwn", text: `*Delta Total - teste*\n$${fmt(snap.delta_total)}` },
       ],
     },
     {
@@ -44,7 +44,7 @@ export async function startSlackSocket() {
 
   // Option A: Slash command (/deribit summary)
   app.command("/deribit", async ({ command, ack, respond }) => {
-    console.log("responding " + command.text + " command");
+    console.log("responding " + command.text + " slack command");
     await ack();
     const sub = (command.text || "").trim().toLowerCase();
     if (!sub || sub === "summary") {
