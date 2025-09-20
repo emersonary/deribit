@@ -73,9 +73,6 @@ export async function deribitVerificationCycle(blockOrders: boolean) {
       equity_usd: usdEquity,
     });
 
-    // Insert snapshot — give the column an explicit alias so we know the key
-    type UpsertRow = { func_upsert_account_snapshot?: number };
-
     const upsertSql =
       "SELECT func_upsert_account_snapshot($1::jsonb, $2::numeric, $3::timestamptz) AS func_upsert_account_snapshot";
 

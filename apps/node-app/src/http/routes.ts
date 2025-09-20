@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { loginAndIssueToken } from "./auth";
-import { authGuard } from "./authGuard";
+import { authGuard, AuthedRequest } from "./authGuard";
 import { getLastAccountSummary } from "../state/lastAccountSummary";
 
 export const routes = Router();
@@ -14,7 +14,7 @@ routes.post("/auth/login", (req, res) => {
 });
 
 /** Protected: simple health/info */
-routes.get("/me", authGuard, (req, res) => {
+routes.get("/me", authGuard, (req: AuthedRequest, res) => {
   res.json({ ok: true, user: req.user });
 });
 
