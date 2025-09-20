@@ -66,7 +66,7 @@ async function deribitVerificationCycle() {
       now.toISOString(),
       "delta:",
       btcSummary.delta_total,
-      "price4:",
+      "price5:",
       ticker.last_price);
 
 
