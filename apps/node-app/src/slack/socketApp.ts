@@ -28,7 +28,7 @@ function buildBlocks(filterCurrencies?: Currency[]) {
   console.log("all: ", all)
   const entries = Object.entries(all)
     .filter(([cur]) =>
-      !filterCurrencies || filterCurrencies.includes(cur as Currency)
+      !filterCurrencies || filterCurrencies.includes((cur as Currency).toUpperCase + "-PERPETUAL")
     )
     // stable order: BTC first, then alpha
     .sort(([a], [b]) => (a === "BTC" ? -1 : b === "BTC" ? 1 : a.localeCompare(b)));
