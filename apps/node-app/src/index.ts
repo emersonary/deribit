@@ -16,7 +16,7 @@ type Ticker = { last_price?: number };
 type AccountSummary = { currency: string; delta_total: number; equity: number };
 
 // Run a task exactly at the start of every minute, even if the previous one overlaps.
-function scheduleNextMinuteOverlap(blockOrders: boolean) {
+export function scheduleNextMinuteOverlap(blockOrders: boolean) {
   const now = Date.now();
   const next = Math.ceil(now / 60_000) * 60_000;
   const delay = next - now;
@@ -41,7 +41,7 @@ function toLocalISOString(d: Date = new Date()): string {
   return local.toISOString().slice(0, -1);          // drop trailing 'Z'
 }
 
-export async function deribitVerificationCycle(blockOrders: boolean) {
+async function deribitVerificationCycle(blockOrders: boolean) {
   try {
     const now = new Date();
 

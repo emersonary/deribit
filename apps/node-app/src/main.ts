@@ -1,7 +1,7 @@
 import "module-alias/register";
 import "dotenv/config";
 import { createServer } from "./http/server";
-import { deribitVerificationCycle } from "./index";
+import { scheduleNextMinuteOverlap } from "./index";
 
 function parseBool(envVar?: string): boolean {
   return envVar?.toLowerCase() === "true";
@@ -17,10 +17,9 @@ async function start() {
   const blockOrders = parseBool(process.env.BLOCK_ORDERS);
   if (blockOrders) console.log("Orders are blocked");
 
-  // fire-and-forget loop (non-blocking)
-  // deribitVerificationCycle(blockOrders).catch(err =>
-  //   console.error("Deribit cycle failed:", err)
-  // );
+  scheduleNextMinuteOverlap(blockOrders).catch(err =>
+    console.error("Deribit cycle failed:", err)
+  );
 
   // graceful shutdown
   const shutdown = async () => {
