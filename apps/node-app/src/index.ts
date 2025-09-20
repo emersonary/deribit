@@ -71,6 +71,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
     setLastAccountSummary({
       last_price: ticker.last_price,
       equity_usd: usdEquity,
+      delta_total: btcSummary.delta_total
     });
 
     const upsertSql =

@@ -66,6 +66,7 @@ function buildSummaryBlocks() {
       fields: [
         { type: "mrkdwn", text: `*Last Price:*\n$${fmt(snap.last_price)}` },
         { type: "mrkdwn", text: `*Equity (USD):*\n$${fmt(snap.equity_usd)}` },
+        { type: "mrkdwn", text: `*Delta Total:*\n$${fmt(snap.delta_total)}` },
       ],
     },
     {
