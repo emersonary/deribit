@@ -60,3 +60,8 @@ npm ci
 npm run build   # outputs typically to ./dist (Vite) or ./build (CRA)
 
 
+sudo nano /etc/systemd/system/node-app.service
+
+micro /etc/postgresql/16/main/postgresql.conf
+
+journalctl -u node-app -f
