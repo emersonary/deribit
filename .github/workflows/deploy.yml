@@ -18,5 +18,38 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script_stop: true
           script: |
-            set -e
-            bash /opt/deribit/apps/node-app/deploy.sh
+            set -euo pipefail
+            REPO_DIR=/opt/deribit
+            APP_DIR=$REPO_DIR/apps/node-app
+            REPO_URL=https://github.com/emersonary/deribit.git
+            BRANCH=main
+
+            echo "== ensure repo dir exists and owned by ${USER} =="
+            sudo mkdir -p "$REPO_DIR"
+            sudo chown -R "$USER":"$USER" "$REPO_DIR"
+
+            echo "== bootstrap monorepo if missing =="
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              if [ -z "$(ls -A "$REPO_DIR")" ]; then
+                echo "[clone] cloning $REPO_URL#$BRANCH into $REPO_DIR"
+                git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$REPO_DIR"
+              else
+                echo "[init] non-empty dir without .git → git init + fetch"
+                git -C "$REPO_DIR" init
+                git -C "$REPO_DIR" remote remove origin 2>/dev/null || true
+                git -C "$REPO_DIR" remote add origin "$REPO_URL"
+                git -C "$REPO_DIR" fetch origin
+                git -C "$REPO_DIR" checkout -B "$BRANCH" "origin/$BRANCH"
+              fi
+            fi
+
+            echo "== normalize git perms and safety =="
+            sudo chown -R "$USER":"$USER" "$REPO_DIR/.git"
+            git config --global --add safe.directory "$REPO_DIR" || true
+
+            echo "== update monorepo from origin =="
+            git -C "$REPO_DIR" fetch origin --prune
+            git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
+
+            echo "== run app deploy =="
+            bash "$APP_DIR/deploy.sh"
