@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { loginAndIssueToken } from "./auth";
 import { authGuard, AuthedRequest } from "./authGuard";
-import { getLastAccountSummary } from "../state/lastAccountSummary";
+import { getAllLastAccountSummaries } from "../state/lastAccountSummary";
 
 export const routes = Router();
 
@@ -20,7 +20,7 @@ routes.get("/me", authGuard, (req: AuthedRequest, res) => {
 
 /** Protected: example business endpoint using your singleton snapshot */
 routes.get("/summary/last", authGuard, (req, res) => {
-  const snap = getLastAccountSummary();
+  const snap = getAllLastAccountSummaries();
   if (!snap) return res.status(204).send(); // no content yet
   res.json(snap);
 });
