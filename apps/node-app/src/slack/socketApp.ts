@@ -25,6 +25,7 @@ function instrumentOf(c: string) {
 function buildBlocks(filterCurrencies?: Currency[]) {
   console.log("filter: ", filterCurrencies)
   const all = getAllLastAccountSummaries(); // { BTC: snap, ETH: snap, ... }
+  console.log("all: ", all)
   const entries = Object.entries(all)
     .filter(([cur]) =>
       !filterCurrencies || filterCurrencies.includes(cur as Currency)
