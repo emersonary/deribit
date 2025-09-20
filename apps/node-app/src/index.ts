@@ -24,6 +24,15 @@ function scheduleNextMinuteOverlap() {
   }, delay);
 }
 
+const formatCurrency = (n?: number, locale: string = 'pt-BR') =>
+  n == null
+    ? '' // or '—'
+    : new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true,
+    }).format(n);
+
 async function deribitVerificationCycle() {
   try {
     const now = new Date();
@@ -63,11 +72,11 @@ async function deribitVerificationCycle() {
 
 
     console.log("Snapshot ID:", rows[0].func_upsert_account_snapshot,
-      now.toISOString(),
+      now.toUTCString,
       "delta:",
-      btcSummary.delta_total,
-      "price6:",
-      ticker.last_price);
+      btcSummary.delta_total?.toFixed(5),
+      "price:",
+      formatCurrency(ticker.last_price));
 
 
 
