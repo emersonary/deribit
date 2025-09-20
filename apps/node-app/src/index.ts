@@ -104,7 +104,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           btcSummary.delta_total + btcSummary.equity,
           ticker.last_price!
         );
-        console.log("Buy Order ID:", orderId);
+        console.log("Buy Order ID:", orderId, "qty:", btcSummary.delta_total + btcSummary.equity);
       } else if (btcSummary.delta_total > -btcSummary.equity + 0.3) {
         const orderId = await sellFutureBTC(Math.abs(btcSummary.delta_total));
         await sendSlackMessage(
@@ -114,7 +114,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           btcSummary.delta_total + btcSummary.equity,
           ticker.last_price!
         );
-        console.log("Sell Order ID:", orderId);
+        console.log("Sell Order ID:", orderId, "qty:", btcSummary.delta_total + btcSummary.equity);
       }
 
       await sleep(5_000);
