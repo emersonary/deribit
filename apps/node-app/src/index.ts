@@ -101,7 +101,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           "Buy order",
           "BTC-PERPETUAL",
           btcSummary.delta_total,
-          0.3,
+          btcSummary.delta_total + btcSummary.equity,
           ticker.last_price!
         );
         console.log("Buy Order ID:", orderId);
@@ -111,7 +111,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           "Sell order",
           "BTC-PERPETUAL",
           btcSummary.delta_total,
-          0.3,
+          btcSummary.delta_total + btcSummary.equity,
           ticker.last_price!
         );
         console.log("Sell Order ID:", orderId);
