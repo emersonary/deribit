@@ -18,9 +18,9 @@ async function start() {
   if (blockOrders) console.log("Orders are blocked");
 
   // fire-and-forget loop (non-blocking)
-  deribitVerificationCycle(blockOrders).catch(err =>
-    console.error("Deribit cycle failed:", err)
-  );
+  // deribitVerificationCycle(blockOrders).catch(err =>
+  //   console.error("Deribit cycle failed:", err)
+  // );
 
   // graceful shutdown
   const shutdown = async () => {
