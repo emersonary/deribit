@@ -95,23 +95,23 @@ async function deribitVerificationCycle(blockOrders: boolean) {
     if (!blockOrders) {
 
       // Hedge logic
-      if (btcSummary.delta_total < -0.3) {
+      if (btcSummary.delta_total < -btcSummary.equity - 0.3) {
         const orderId = await buyFutureBTC(Math.abs(btcSummary.delta_total));
         await sendSlackMessage(
           "Buy order",
           "BTC-PERPETUAL",
           btcSummary.delta_total,
-          btcSummary.equity,
+          0.3,
           ticker.last_price!
         );
         console.log("Buy Order ID:", orderId);
-      } else if (btcSummary.delta_total > 0.3) {
+      } else if (btcSummary.delta_total > -btcSummary.equity + 0.3) {
         const orderId = await sellFutureBTC(Math.abs(btcSummary.delta_total));
         await sendSlackMessage(
           "Sell order",
           "BTC-PERPETUAL",
           btcSummary.delta_total,
-          btcSummary.equity,
+          0.3,
           ticker.last_price!
         );
         console.log("Sell Order ID:", orderId);
