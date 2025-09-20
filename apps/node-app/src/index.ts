@@ -74,7 +74,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
 
       // (Optional) this overwrites the "last" snapshot; if you want per-currency state,
       // make setLastAccountSummary accept a currency or store a map.
-      setLastAccountSummary({
+      setLastAccountSummary(instrument, {
         last_price: ticker.last_price,
         equity_usd: usdEquity,
         delta_total: summary.delta_total,

@@ -1,5 +1,9 @@
 import { App } from "@slack/bolt";
-import { getLastAccountSummary } from "../state/lastAccountSummary";
+// UPDATED import: use the per-currency store
+import {
+  getAllLastAccountSummaries,
+  type Currency,
+} from "../state/lastAccountSummary";
 
 function fmt(n: number | null | undefined, locale = "en-US") {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
@@ -10,31 +14,75 @@ function fmt(n: number | null | undefined, locale = "en-US") {
   }).format(n);
 }
 
-function buildBlocks() {
-  const snap = getLastAccountSummary();
-  if (!snap) {
-    return [{ type: "section", text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." } }];
+function instrumentOf(c: string) {
+  return `${c}-PERPETUAL`;
+}
+
+/**
+ * Build Slack blocks for all (or a subset of) currencies.
+ * Pass `filterCurrencies` like ["BTC"] to show only BTC.
+ */
+function buildBlocks(filterCurrencies?: Currency[]) {
+  const all = getAllLastAccountSummaries(); // { BTC: snap, ETH: snap, ... }
+  const entries = Object.entries(all)
+    .filter(([cur]) =>
+      !filterCurrencies || filterCurrencies.includes(cur as Currency)
+    )
+    // stable order: BTC first, then alpha
+    .sort(([a], [b]) => (a === "BTC" ? -1 : b === "BTC" ? 1 : a.localeCompare(b)));
+
+  if (entries.length === 0) {
+    return [
+      { type: "section", text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." } },
+    ];
   }
-  const ts = Math.floor((snap.updated_at ?? Date.now()) / 1000);
-  return [
+
+  const blocks: any[] = [
     { type: "header", text: { type: "plain_text", text: "Deribit – Latest Account Summary" } },
-    {
+  ];
+
+  entries.forEach(([currency, snap], idx) => {
+    const ts = Math.floor((snap.updated_at ?? Date.now()) / 1000);
+    const instrument = instrumentOf(currency);
+
+    blocks.push({
       type: "section",
       fields: [
+        { type: "mrkdwn", text: `*Instrument*\n${instrument}` },
         { type: "mrkdwn", text: `*Last Price*\n$${fmt(snap.last_price)}` },
         { type: "mrkdwn", text: `*Equity (USD)*\n$${fmt(snap.equity_usd)}` },
-        { type: "mrkdwn", text: `*Equity*\n$${fmt(snap.equity)}` },
-        { type: "mrkdwn", text: `*Delta Total*\n$${fmt(snap.delta_total)}` },
-        { type: "mrkdwn", text: `*Diff*\n$${fmt(snap.diff)}` },
+        { type: "mrkdwn", text: `*Equity (${currency})*\n${fmt(snap.equity)}` },
+        { type: "mrkdwn", text: `*Delta Total*\n${fmt(snap.delta_total)}` },
+        { type: "mrkdwn", text: `*Diff*\n${fmt(snap.diff)}` },
       ],
-    },
-    {
+    });
+
+    blocks.push({
       type: "context",
       elements: [
-        { type: "mrkdwn", text: `Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(snap.updated_at).toISOString()}>` },
+        {
+          type: "mrkdwn",
+          text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
+            snap.updated_at
+          ).toISOString()}>`,
+        },
       ],
-    },
-  ];
+    });
+
+    if (idx < entries.length - 1) {
+      blocks.push({ type: "divider" });
+    }
+  });
+
+  return blocks;
+}
+
+function parseCurrencies(input: string): Currency[] | undefined {
+  const t = input.trim().toUpperCase();
+  if (!t) return undefined;
+  const parts = t.split(/\s+/).map(s => s.trim()).filter(Boolean);
+  const valid = parts.filter(p => ["BTC", "ETH"].includes(p)); // extend if you add more
+  return valid.length ? (valid as Currency[]) : undefined;
 }
 
 export async function startSlackSocket() {
@@ -44,23 +92,28 @@ export async function startSlackSocket() {
     socketMode: true,
   });
 
-  // Option A: Slash command (/deribit summary)
+  // Slash: /deribit summ [BTC|ETH]
   app.command("/deribit", async ({ command, ack, respond }) => {
-    console.log("responding " + command.text + " slack command");
     await ack();
     const sub = (command.text || "").trim().toLowerCase();
-    if (!sub || sub === "summ") {
-      await respond({ response_type: "in_channel", blocks: buildBlocks() });
+    if (!sub || sub.startsWith("summ")) {
+      const filter = parseCurrencies(command.text.replace(/^summ/i, ""));
+      await respond({ response_type: "in_channel", blocks: buildBlocks(filter) });
     } else {
-      await respond({ response_type: "ephemeral", text: "Usage: `/deribit summ`" });
+      await respond({
+        response_type: "ephemeral",
+        text: "Usage: `/deribit summ [BTC|ETH]`",
+      });
     }
   });
 
-  // Option B: App mentions (@DeribitBot summary)
+  // Mentions: @DeribitBot summ [BTC|ETH]
   app.event("app_mention", async ({ event, say }) => {
     const text = (event as any).text?.toLowerCase() ?? "";
     if (text.includes("summ")) {
-      await say({ blocks: buildBlocks() });
+      const after = text.replace(/.*summ/i, ""); // words after 'summ'
+      const filter = parseCurrencies(after);
+      await say({ blocks: buildBlocks(filter) });
     } else {
       await say("Try `summ`.");
     }

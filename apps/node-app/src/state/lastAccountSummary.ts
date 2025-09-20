@@ -2,40 +2,73 @@
 import { EventEmitter } from "events";
 import { LastAccountSnapshot } from "@goldie/models";
 
+// Narrow if you like: type Currency = "BTC" | "ETH";
+export type Currency = string;
+
 /**
- * Simple in-memory singleton store for the latest account summary.
+ * In-memory per-currency store for the latest account summary.
  * Because Node caches modules, this is shared across the whole app.
  */
 
 const emitter = new EventEmitter();
 
-// Start empty; we'll set it after first successful fetch.
-let current: LastAccountSnapshot | null = null;
+// Per-currency snapshots
+const store = new Map<Currency, Readonly<LastAccountSnapshot>>();
 
-export function setLastAccountSummary(
+function buildNext(
+  prev: Readonly<LastAccountSnapshot> | undefined,
   partial: Partial<Pick<LastAccountSnapshot, "last_price" | "equity_usd" | "delta_total" | "equity" | "diff">>
 ): Readonly<LastAccountSnapshot> {
-  const next: LastAccountSnapshot = Object.freeze({
-    last_price: partial.last_price ?? current?.last_price ?? null,
-    equity_usd: partial.equity_usd ?? current?.equity_usd ?? null,
-    delta_total: partial.delta_total ?? current?.delta_total ?? null,
-    equity: partial.equity ?? current?.equity ?? null,
-    diff: partial.diff ?? current?.diff ?? null,
+  return Object.freeze({
+    last_price: partial.last_price ?? prev?.last_price ?? null,
+    equity_usd: partial.equity_usd ?? prev?.equity_usd ?? null,
+    delta_total: partial.delta_total ?? prev?.delta_total ?? null,
+    equity: partial.equity ?? prev?.equity ?? null,
+    diff: partial.diff ?? prev?.diff ?? null,
     updated_at: Date.now(),
   });
+}
 
-  current = next;
-  emitter.emit("change", next);
+/** Upsert and emit change for a currency. */
+export function setLastAccountSummary(
+  currency: Currency,
+  partial: Partial<Pick<LastAccountSnapshot, "last_price" | "equity_usd" | "delta_total" | "equity" | "diff">>
+): Readonly<LastAccountSnapshot> {
+  const prev = store.get(currency);
+  const next = buildNext(prev, partial);
+  store.set(currency, next);
+
+  // Emit per-currency and "any" change events
+  emitter.emit(`change:${currency}`, next);
+  emitter.emit("change", currency, next);
   return next;
 }
 
-export function getLastAccountSummary(): Readonly<LastAccountSnapshot> | null {
-  return current;
+/** Get the latest snapshot for a currency (or null if none). */
+export function getLastAccountSummary(currency: Currency): Readonly<LastAccountSnapshot> | null {
+  return store.get(currency) ?? null;
 }
 
-/** Subscribe to changes. Returns an unsubscribe function. */
+/** Get shallow copy of all current snapshots keyed by currency. */
+export function getAllLastAccountSummaries(): Record<Currency, Readonly<LastAccountSnapshot>> {
+  const out: Record<string, Readonly<LastAccountSnapshot>> = {};
+  for (const [k, v] of store.entries()) out[k] = v;
+  return out;
+}
+
+/** Subscribe to changes for a specific currency. Returns an unsubscribe. */
 export function onLastAccountSummaryChange(
+  currency: Currency,
   listener: (snap: Readonly<LastAccountSnapshot>) => void
+): () => void {
+  const event = `change:${currency}`;
+  emitter.on(event, listener);
+  return () => emitter.off(event, listener);
+}
+
+/** Subscribe to changes for any currency. Returns an unsubscribe. */
+export function onAnyLastAccountSummaryChange(
+  listener: (currency: Currency, snap: Readonly<LastAccountSnapshot>) => void
 ): () => void {
   emitter.on("change", listener);
   return () => emitter.off("change", listener);
@@ -43,5 +76,5 @@ export function onLastAccountSummaryChange(
 
 /** Optional: reset (useful in tests) */
 export function resetLastAccountSummary(): void {
-  current = null;
+  store.clear();
 }
