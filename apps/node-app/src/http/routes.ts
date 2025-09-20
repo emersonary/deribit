@@ -18,9 +18,41 @@ routes.get("/me", authGuard, (req: AuthedRequest, res) => {
   res.json({ ok: true, user: req.user });
 });
 
-/** Protected: example business endpoint using your singleton snapshot */
+/** Helper: extract base currency from instrument key */
+function currencyFromInstrument(instrument: string): string {
+  // e.g. "BTC-PERPETUAL" -> "BTC", "ETH-27DEC25" -> "ETH"
+  return (instrument.split("-")[0] || instrument).toUpperCase();
+}
+
+/** Helper: parse ?currency=... from query (string | string[]) */
+function parseCurrencies(q: unknown): string[] | null {
+  if (q == null) return null;
+  if (Array.isArray(q)) {
+    // /summary/last?currency=BTC&currency=ETH
+    return q.flatMap(s => String(s).split(",")).map(s => s.trim().toUpperCase()).filter(Boolean);
+  }
+  // /summary/last?currency=BTC,ETH  OR  ?currency=BTC
+  return String(q).split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+}
+
+/** Protected: business endpoint using singleton snapshot, with optional currency filter */
 routes.get("/summary/last", authGuard, (req, res) => {
-  const snap = getAllLastAccountSummaries();
-  if (!snap) return res.status(204).send(); // no content yet
-  res.json(snap);
+  const all = getAllLastAccountSummaries() as Record<string, any> | null | undefined;
+  if (!all || Object.keys(all).length === 0) return res.status(204).send(); // no content yet
+
+  const wanted = parseCurrencies((req.query as any).currency);
+  if (!wanted || wanted.length === 0) {
+    return res.json(all); // no filter provided -> original behavior
+  }
+
+  const wantedSet = new Set(wanted);
+  const filteredEntries = Object.entries(all).filter(([instrument]) =>
+    wantedSet.has(currencyFromInstrument(instrument))
+  );
+
+  // Return the same shape (object keyed by instrument)
+  const filtered = Object.fromEntries(filteredEntries);
+
+  // You could return 204 if filter produces empty set; here we return 200 {} for clarity.
+  return res.json(filtered);
 });
