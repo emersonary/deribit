@@ -33,6 +33,12 @@ const formatCurrency = (n?: number, locale: string = 'pt-BR') =>
       useGrouping: true,
     }).format(n);
 
+function toLocalISOString(d: Date = new Date()): string {
+  const tz = d.getTimezoneOffset();                 // minutes (UTC - local)
+  const local = new Date(d.getTime() - tz * 60000); // shift to local
+  return local.toISOString().slice(0, -1);          // drop trailing 'Z'
+}
+
 async function deribitVerificationCycle() {
   try {
     const now = new Date();
@@ -72,7 +78,7 @@ async function deribitVerificationCycle() {
 
 
     console.log("Snapshot ID:", rows[0].func_upsert_account_snapshot,
-      now.toUTCString,
+      toLocalISOString(now),
       "delta:",
       btcSummary.delta_total?.toFixed(5),
       "price:",
