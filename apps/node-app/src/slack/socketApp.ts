@@ -23,6 +23,7 @@ function instrumentOf(c: string) {
  * Pass `filterCurrencies` like ["BTC"] to show only BTC.
  */
 function buildBlocks(filterCurrencies?: Currency[]) {
+  console.log("filter: ", filterCurrencies)
   const all = getAllLastAccountSummaries(); // { BTC: snap, ETH: snap, ... }
   const entries = Object.entries(all)
     .filter(([cur]) =>
@@ -95,6 +96,7 @@ export async function startSlackSocket() {
   // Slash: /deribit summ [BTC|ETH]
   app.command("/deribit", async ({ command, ack, respond }) => {
     await ack();
+    console.log("responding " + command.text + " slack command");
     const sub = (command.text || "").trim().toLowerCase();
     if (!sub || sub.startsWith("summ")) {
       const filter = parseCurrencies(command.text.replace(/^summ/i, ""));
