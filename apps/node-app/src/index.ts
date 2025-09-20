@@ -78,6 +78,8 @@ async function deribitVerificationCycle() {
 
 
     console.log("Snapshot ID:", rows[0].func_upsert_account_snapshot,
+      "equity:",
+      btcSummary.equity,
       "usd_equity:",
       formatCurrency(ticker.last_price && 0 * btcSummary.equity),
       "delta:",
