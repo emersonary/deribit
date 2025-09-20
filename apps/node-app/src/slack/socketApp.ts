@@ -18,44 +18,55 @@ function instrumentOf(c: string) {
   return `${c}-PERPETUAL`;
 }
 
+function currencyFromInstrument(instrument: string): Currency {
+  // e.g. "BTC-PERPETUAL" -> "BTC", "ETH-27DEC25" -> "ETH"
+  const [cur] = instrument.split("-");
+  return (cur?.toUpperCase() ?? instrument) as Currency;
+}
 /**
  * Build Slack blocks for all (or a subset of) currencies.
  * Pass `filterCurrencies` like ["BTC"] to show only BTC.
  */
 function buildBlocks(filterCurrencies?: Currency[]) {
-  console.log("filter: ", filterCurrencies)
-  const all = getAllLastAccountSummaries(); // { BTC: snap, ETH: snap, ... }
-  console.log("all: ", all)
-  const entries = Object.entries(all)
-    .filter(([cur]) =>
-      !filterCurrencies || filterCurrencies.includes((cur as Currency).toUpperCase + "-PERPETUAL")
-    )
-    // stable order: BTC first, then alpha
-    .sort(([a], [b]) => (a === "BTC" ? -1 : b === "BTC" ? 1 : a.localeCompare(b)));
+  const all = getAllLastAccountSummaries() as Record<string, any>; // { "BTC-PERPETUAL": snap, ... }
 
-  if (entries.length === 0) {
-    return [
-      { type: "section", text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." } },
-    ];
+  // project into { instrument, currency, snap }
+  const rows = Object.entries(all)
+    .map(([instrument, snap]) => ({
+      instrument,
+      currency: currencyFromInstrument(instrument),
+      snap,
+    }))
+    .filter(
+      ({ currency }) =>
+        !filterCurrencies ||
+        filterCurrencies.map((c) => c.toUpperCase()).includes(currency)
+    )
+    // BTC first, then alpha by currency
+    .sort((a, b) =>
+      a.currency === "BTC" ? -1 : b.currency === "BTC" ? 1 : a.currency.localeCompare(b.currency)
+    );
+
+  if (rows.length === 0) {
+    return [{ type: "section", text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." } }];
   }
 
   const blocks: any[] = [
     { type: "header", text: { type: "plain_text", text: "Deribit – Latest Account Summary" } },
   ];
 
-  entries.forEach(([currency, snap], idx) => {
-    const ts = Math.floor((snap.updated_at ?? Date.now()) / 1000);
-    const instrument = instrumentOf(currency);
+  rows.forEach(({ instrument, currency, snap }, idx) => {
+    const ts = Math.floor(((snap?.updated_at ?? Date.now()) as number) / 1000);
 
     blocks.push({
       type: "section",
       fields: [
         { type: "mrkdwn", text: `*Instrument*\n${instrument}` },
-        { type: "mrkdwn", text: `*Last Price*\n$${fmt(snap.last_price)}` },
-        { type: "mrkdwn", text: `*Equity (USD)*\n$${fmt(snap.equity_usd)}` },
-        { type: "mrkdwn", text: `*Equity (${currency})*\n${fmt(snap.equity)}` },
-        { type: "mrkdwn", text: `*Delta Total*\n${fmt(snap.delta_total)}` },
-        { type: "mrkdwn", text: `*Diff*\n${fmt(snap.diff)}` },
+        { type: "mrkdwn", text: `*Last Price*\n$${fmt(snap?.last_price)}` },
+        { type: "mrkdwn", text: `*Equity (USD)*\n$${fmt(snap?.equity_usd)}` },
+        { type: "mrkdwn", text: `*Equity (${currency})*\n${fmt(snap?.equity)}` },
+        { type: "mrkdwn", text: `*Delta Total*\n${fmt(snap?.delta_total)}` },
+        { type: "mrkdwn", text: `*Diff*\n${fmt(snap?.diff)}` },
       ],
     });
 
@@ -65,15 +76,13 @@ function buildBlocks(filterCurrencies?: Currency[]) {
         {
           type: "mrkdwn",
           text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
-            snap.updated_at
+            snap?.updated_at ?? Date.now()
           ).toISOString()}>`,
         },
       ],
     });
 
-    if (idx < entries.length - 1) {
-      blocks.push({ type: "divider" });
-    }
+    if (idx < rows.length - 1) blocks.push({ type: "divider" });
   });
 
   return blocks;
