@@ -103,20 +103,20 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           "Buy order",
           "BTC-PERPETUAL",
           btcSummary.delta_total,
-          diff,
+          btcSummary.equity,
           ticker.last_price!
         );
-        console.log("Buy Order ID:", orderId, "qty:", diff);
+        console.log("Buy Order ID:", orderId, "qty:", Math.abs(diff));
       } else if (diff > + 0.3) {
         const orderId = await sellFutureBTC(Math.abs(diff));
         await sendSlackMessage(
           "Sell order",
           "BTC-PERPETUAL",
           btcSummary.delta_total,
-          diff,
+          btcSummary.equity,
           ticker.last_price!
         );
-        console.log("Sell Order ID:", orderId, "qty:", diff);
+        console.log("Sell Order ID:", orderId, "qty:", Math.abs(diff));
       }
 
       await sleep(5_000);
