@@ -2,6 +2,7 @@ import "module-alias/register";
 import "dotenv/config";
 import { createServer } from "./http/server";
 import { scheduleNextMinuteOverlap } from "./index";
+import { startSlackSocket } from "./slack/socketApp";
 
 function parseBool(envVar?: string): boolean {
   return envVar?.toLowerCase() === "true";
@@ -13,6 +14,9 @@ async function start() {
   const server = app.listen(port, () => {
     console.log(`HTTP server listening on :${port}`);
   });
+
+  // Start Slack (no HTTPS needed)
+  startSlackSocket().catch(err => console.error("Slack socket error:", err));
 
   const blockOrders = parseBool(process.env.BLOCK_ORDERS);
   if (blockOrders) console.log("Orders are blocked");
