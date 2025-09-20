@@ -7,9 +7,9 @@ function getResult<T = any>(body: unknown): T {
   return (body as any)?.result as T;
 }
 
-export async function buyFutureBTC(btcValue: number): Promise<number | undefined> {
+export async function buyFuture(instrumentaName: string, btcValue: number): Promise<number | undefined> {
   try {
-    const ticker = await getTicker("BTC-PERPETUAL");
+    const ticker = await getTicker(instrumentaName);
     const usdValue = Math.max(10, Math.floor(ticker.last_price * btcValue / 10) * 10);
     // Create the API client
     const api = new PrivateApi("https://test.deribit.com/api/v2");
@@ -20,7 +20,7 @@ export async function buyFutureBTC(btcValue: number): Promise<number | undefined
 
     // Example: Buy 10 contracts of BTC-PERPETUAL as a market order
     const { body } = await api.privateBuyGet(
-      "BTC-PERPETUAL",   // instrument name
+      instrumentaName,   // instrument name
       usdValue,                // amount
       "market",          // order type: limit | stop_limit | market | stop_market
       "my-order-label"   // optional label
