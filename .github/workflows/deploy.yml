@@ -18,19 +18,5 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script_stop: true
           script: |
-            set -euo pipefail
-            APP_DIR=/opt/deribit/apps/node-app
-
-            echo "== preflight: fix repo perms if needed =="
-            if [ ! -w "$APP_DIR/.git/objects" ]; then
-              # Make sure your remote user has passwordless sudo; otherwise do a one-time chown manually.
-              sudo chown -R "$USER":"$USER" "$APP_DIR"
-              sudo chmod -R u+rwX,g+rwX "$APP_DIR/.git"
-              sudo find "$APP_DIR/.git/objects" -type d -exec chmod 775 {} \;
-            fi
-
-            # Silence 'dubious ownership' warnings if ownership changes later
-            git config --global --add safe.directory "$APP_DIR" || true
-
-            # Run your existing deploy
-            bash "$APP_DIR/deploy.sh"
+            set -e
+            bash /opt/deribit/apps/node-app/deploy.sh
