@@ -40,6 +40,7 @@ export async function startSlackSocket() {
 
   // Option A: Slash command (/deribit summary)
   app.command("/deribit", async ({ command, ack, respond }) => {
+    console.log("responding " + command + "command");
     await ack();
     const sub = (command.text || "").trim().toLowerCase();
     if (!sub || sub === "summary") {
