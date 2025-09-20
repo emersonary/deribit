@@ -1,9 +1,13 @@
 import { App } from "@slack/bolt";
 import { getLastAccountSummary } from "../state/lastAccountSummary";
 
-function fmt(n: number | null | undefined) {
-  if (!Number.isFinite(n as number)) return "—";
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n as number);
+function fmt(n: number | null | undefined, locale = "en-US") {
+  if (typeof n !== "number" || !Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  }).format(n);
 }
 
 function buildBlocks() {
@@ -40,7 +44,7 @@ export async function startSlackSocket() {
 
   // Option A: Slash command (/deribit summary)
   app.command("/deribit", async ({ command, ack, respond }) => {
-    console.log("responding " + command + "command");
+    console.log("responding " + command.text + " command");
     await ack();
     const sub = (command.text || "").trim().toLowerCase();
     if (!sub || sub === "summary") {
