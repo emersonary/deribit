@@ -9,6 +9,7 @@ import { sellFutureBTC } from "./api/sell";
 import { query, closePool } from "./db";
 import { sendSlackMessage } from "./slack";
 import { setLastAccountSummary } from "./state/lastAccountSummary";
+import { formatCurrency } from "./utils";
 
 // --- types for safer reads ---
 type UpsertRow = { func_upsert_account_snapshot?: number };
@@ -25,15 +26,6 @@ export async function scheduleNextMinuteOverlap(blockOrders: boolean) {
     scheduleNextMinuteOverlap(blockOrders);
   }, delay);
 }
-
-const formatCurrency = (n?: number, locale: string = 'pt-BR') =>
-  n == null
-    ? '' // or '—'
-    : new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      useGrouping: true,
-    }).format(n);
 
 function toLocalISOString(d: Date = new Date()): string {
   const tz = d.getTimezoneOffset();                 // minutes (UTC - local)
