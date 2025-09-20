@@ -83,9 +83,9 @@ async function deribitVerificationCycle(blockOrders: boolean) {
       "usd_equity:",
       formatCurrency(usdEquity),
       "delta:",
-      btcSummary.delta_total?.toFixed(5),
+      btcSummary.delta_total?.toFixed(2),
       "diff:",
-      diff);
+      diff.toFixed(2));
 
     if (!blockOrders) {
 
