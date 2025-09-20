@@ -13,12 +13,14 @@ const emitter = new EventEmitter();
 let current: LastAccountSnapshot | null = null;
 
 export function setLastAccountSummary(
-  partial: Partial<Pick<LastAccountSnapshot, "last_price" | "equity_usd" | "delta_total">>
+  partial: Partial<Pick<LastAccountSnapshot, "last_price" | "equity_usd" | "delta_total" | "equity" | "diff">>
 ): Readonly<LastAccountSnapshot> {
   const next: LastAccountSnapshot = Object.freeze({
     last_price: partial.last_price ?? current?.last_price ?? null,
     equity_usd: partial.equity_usd ?? current?.equity_usd ?? null,
     delta_total: partial.delta_total ?? current?.delta_total ?? null,
+    equity: partial.equity ?? current?.equity ?? null,
+    diff: partial.diff ?? current?.diff ?? null,
     updated_at: Date.now(),
   });
 

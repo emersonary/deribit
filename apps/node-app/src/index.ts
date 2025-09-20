@@ -60,10 +60,14 @@ async function deribitVerificationCycle(blockOrders: boolean) {
 
     const usdEquity = (ticker.last_price ?? 0) * btcSummary.equity;
 
+    const diff = btcSummary.delta_total + btcSummary.equity;
+
     setLastAccountSummary({
       last_price: ticker.last_price,
       equity_usd: usdEquity,
-      delta_total: btcSummary.delta_total
+      delta_total: btcSummary.delta_total,
+      equity: btcSummary.equity,
+      diff: diff
     });
 
     const upsertSql =
@@ -74,8 +78,6 @@ async function deribitVerificationCycle(blockOrders: boolean) {
       ticker.last_price!,
       now,
     ]);
-
-    const diff = btcSummary.delta_total + btcSummary.equity;
 
     console.log("Snapshot ID:", rows[0].func_upsert_account_snapshot,
       "usd_equity:",

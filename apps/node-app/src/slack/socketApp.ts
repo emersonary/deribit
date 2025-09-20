@@ -23,7 +23,9 @@ function buildBlocks() {
       fields: [
         { type: "mrkdwn", text: `*Last Price*\n$${fmt(snap.last_price)}` },
         { type: "mrkdwn", text: `*Equity (USD)*\n$${fmt(snap.equity_usd)}` },
+        { type: "mrkdwn", text: `*Equity*\n$${fmt(snap.equity)}` },
         { type: "mrkdwn", text: `*Delta Total*\n$${fmt(snap.delta_total)}` },
+        { type: "mrkdwn", text: `*Diff*\n$${fmt(snap.diff)}` },
       ],
     },
     {
