@@ -3,10 +3,8 @@ import "dotenv/config";
 import { createServer } from "./http/server";
 import { scheduleNextMinuteOverlap } from "./index";
 import { startSlackSocket } from "./slack/socketApp";
+import { parseBool } from "./utils";
 
-function parseBool(envVar?: string): boolean {
-  return envVar?.toLowerCase() === "true";
-}
 
 let schedulerStarted = false;
 
@@ -23,11 +21,13 @@ async function start() {
     console.log(`HTTP server listening on :${port}`);
   });
 
-  // Start Slack (no HTTPS needed)
-  startSlackSocket().catch(err => console.error("Slack socket error:", err));
-
   const blockOrders = parseBool(process.env.BLOCK_ORDERS);
   if (blockOrders) console.log("Orders are blocked");
+
+  if (!blockOrders) {
+    // Start Slack (no HTTPS needed)
+    startSlackSocket().catch(err => console.error("Slack socket error:", err));
+  }
 
   startScheduler(blockOrders).catch(err =>
     console.error("Deribit cycle failed:", err)

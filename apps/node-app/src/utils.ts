@@ -9,3 +9,7 @@ export function formatCurrency(n?: number, locale: string = 'pt-BR') {
     }).format(n);
   return result;
 }
+
+export function parseBool(envVar?: string): boolean {
+  return envVar?.toLowerCase() === "true";
+}

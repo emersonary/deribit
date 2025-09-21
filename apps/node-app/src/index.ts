@@ -93,7 +93,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
       ]);
 
       console.log(
-        `[${currency}] Snapshot ID:`,
+        `[${currency}] SID:`,
         rows[0].func_upsert_account_snapshot,
         "usd_equity:",
         formatCurrency(usdEquity),
@@ -149,16 +149,8 @@ process.on("SIGTERM", async () => {
   process.exit(0);
 });
 
-function parseBool(envVar?: string): boolean {
-  return envVar?.toLowerCase() === "true";
-}
 function main() {
   console.log("Initializing application");
-  // const blockOrders = parseBool(process.env["BLOCK_ORDERS"])
-  // if (blockOrders) {
-  //   console.log("Orders are blocked");
-  // }
-  //scheduleNextMinuteOverlap(blockOrders);
 }
 
 main();

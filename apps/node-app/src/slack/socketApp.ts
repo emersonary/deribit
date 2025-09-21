@@ -1,4 +1,6 @@
 import { App } from "@slack/bolt";
+import 'dotenv/config';
+
 // UPDATED import: use the per-currency store
 import {
   getAllLastAccountSummaries,
