@@ -111,7 +111,9 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           const orderId = await buyFuture(instrument, Math.abs(diff));
           await sendSlackMessage(
             "Buy order",
+            orderId ?? 0,
             instrument,
+            Math.abs(diff),
             summary.delta_total,
             summary.equity,
             ticker.last_price!
@@ -124,7 +126,9 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           const orderId = await sellFuture(instrument, Math.abs(diff));
           await sendSlackMessage(
             "Sell order",
+            orderId ?? 0,
             instrument,
+            Math.abs(diff),
             summary.delta_total,
             summary.equity,
             ticker.last_price!

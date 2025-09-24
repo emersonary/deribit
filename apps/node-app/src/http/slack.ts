@@ -1,7 +1,7 @@
 // apps/node-app/src/http/slack.ts
 import crypto from "crypto";
 import { Router, Request, Response, NextFunction } from "express";
-import { getLastAccountSummary } from "../state/lastAccountSummary";
+import { getAllLastAccountSummaries } from "../state/lastAccountSummary";
 
 const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET || "";
 const SKIP_VERIFY = (process.env.SLACK_SKIP_VERIFY || "false").toLowerCase() === "true";
@@ -52,7 +52,7 @@ function fmt(n: number | null | undefined) {
 
 /** Build Slack blocks for the snapshot */
 function buildSummaryBlocks() {
-  const snap = getLastAccountSummary(); // { last_price, equity_usd, updated_at }
+  const snap = getAllLastAccountSummaries(); // { last_price, equity_usd, updated_at }
   if (!snap) {
     return [
       { type: "section", text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." } },

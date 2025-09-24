@@ -6,7 +6,7 @@ import {
 } from "./slackAPI"; // path to the file
 import { formatCurrency } from "./utils";
 
-export async function sendSlackMessage(orderType: string, instrumentName: string, amount: number, equity: number, fillPrice: number) {
+export async function sendSlackMessage(orderType: string, orderId: number, instrumentName: string, qty: number, amount: number, equity: number, fillPrice: number) {
   // Create controller
   const api = new CtrlSlackAPI();
 
@@ -27,7 +27,11 @@ export async function sendSlackMessage(orderType: string, instrumentName: string
 
   // Add an attachment
   const att = msg.listaAttachment.add();
-  att.text = "Amount (delta): " + formatCurrency(amount) + "\n Fill Price (USD): " + formatCurrency(fillPrice) + "\n Equity (USD): " + formatCurrency(Math.round(equity * fillPrice * 100) / 100);
+  att.text = "Order ID: " + orderId +
+    "\nAmount (BTC): " + formatCurrency(qty) +
+    "\nTriggering Delta: " + formatCurrency(amount) +
+    "\nFill Price (USD): " + formatCurrency(fillPrice) +
+    "\nPrevious Equity (USD): " + formatCurrency(Math.round(equity * fillPrice * 100) / 100);
   //att.authorName = instrumentName;
   //att.title = "Slack API Documentation";
   //att.titleLink = "https://api.slack.com/";
