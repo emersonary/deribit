@@ -8,7 +8,6 @@ import {
   type Currency,
 } from "../state/lastAccountSummary";
 
-
 function fmt(n: number | null | undefined, locale = "en-US") {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
   return new Intl.NumberFormat(locale, {
@@ -31,8 +30,7 @@ function currencyFromInstrument(instrument: string): Currency {
  * Build Slack blocks for all (or a subset of) currencies.
  * Pass `filterCurrencies` like ["BTC"] to show only BTC.
  */
-async function buildBlocks(filterCurrencies?: Currency[]) {
-  const allStatuses = await getStatusInstruments();
+function buildBlocks(filterCurrencies?: Currency[]) {
   const all = getAllLastAccountSummaries() as Record<string, any>; // { "BTC-PERPETUAL": snap, ... }
 
   // project into { instrument, currency, snap }
@@ -60,11 +58,8 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
     { type: "header", text: { type: "plain_text", text: "Deribit – Latest Account Summary" } },
   ];
 
-
   rows.forEach(({ instrument, currency, snap }, idx) => {
     const ts = Math.floor(((snap?.updated_at ?? Date.now()) as number) / 1000);
-
-    const status = allStatuses.instruments?.[instrument] ?? null;
 
     blocks.push({
       type: "section",
