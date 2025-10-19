@@ -78,23 +78,17 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
       ],
     });
 
-    const contextElements: any[] = [
-      {
-        type: "mrkdwn",
-        text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
-          snap?.updated_at ?? Date.now()
-        ).toISOString()}>`,
-      },
-    ];
-
-    // if (status) {
-    //   contextElements.push({
-    //     type: "mrkdwn",
-    //     text: `*Status*: enabled=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
-    //   });
-    // }
-
-    blocks.push({ type: "context", elements: contextElements });
+    blocks.push({
+      type: "context",
+      elements: [
+        {
+          type: "mrkdwn",
+          text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
+            snap?.updated_at ?? Date.now()
+          ).toISOString()}>`,
+        },
+      ],
+    });
 
     if (idx < rows.length - 1) blocks.push({ type: "divider" });
   });
