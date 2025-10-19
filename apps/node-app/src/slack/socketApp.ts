@@ -87,12 +87,12 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
       },
     ];
 
-    if (status) {
-      contextElements.push({
-        type: "mrkdwn",
-        text: `*Status*: enabled=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
-      });
-    }
+    // if (status) {
+    //   contextElements.push({
+    //     type: "mrkdwn",
+    //     text: `*Status*: enabled=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
+    //   });
+    // }
 
     blocks.push({ type: "context", elements: contextElements });
 
