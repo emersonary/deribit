@@ -61,7 +61,8 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
   rows.forEach(({ instrument, currency, snap }, idx) => {
     const ts = Math.floor(((snap?.updated_at ?? Date.now()) as number) / 1000);
 
-    const status = allStatuses.instruments?.[instrument] ?? null;
+    const rawStatus = allStatuses.instruments?.[instrument] ?? null;
+    const status = rawStatus ?? { adj_enabled: false, adj_edge: 0 };
 
     blocks.push({
       type: "section",
