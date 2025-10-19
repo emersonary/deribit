@@ -30,9 +30,9 @@ function currencyFromInstrument(instrument: string): Currency {
  * Build Slack blocks for all (or a subset of) currencies.
  * Pass `filterCurrencies` like ["BTC"] to show only BTC.
  */
-function buildBlocks(filterCurrencies?: Currency[]) {
+async function buildBlocks(filterCurrencies?: Currency[]) {
   const all = getAllLastAccountSummaries() as Record<string, any>; // { "BTC-PERPETUAL": snap, ... }
-
+  const allStatuses = await getStatusInstruments();
   // project into { instrument, currency, snap }
   const rows = Object.entries(all)
     .map(([instrument, snap]) => ({
@@ -61,6 +61,8 @@ function buildBlocks(filterCurrencies?: Currency[]) {
   rows.forEach(({ instrument, currency, snap }, idx) => {
     const ts = Math.floor(((snap?.updated_at ?? Date.now()) as number) / 1000);
 
+    const status = allStatuses.instruments?.[instrument] ?? null;
+
     blocks.push({
       type: "section",
       fields: [
@@ -73,17 +75,23 @@ function buildBlocks(filterCurrencies?: Currency[]) {
       ],
     });
 
-    blocks.push({
-      type: "context",
-      elements: [
-        {
-          type: "mrkdwn",
-          text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
-            snap?.updated_at ?? Date.now()
-          ).toISOString()}>`,
-        },
-      ],
-    });
+    const contextElements: any[] = [
+      {
+        type: "mrkdwn",
+        text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
+          snap?.updated_at ?? Date.now()
+        ).toISOString()}>`,
+      },
+    ];
+
+    if (status) {
+      contextElements.push({
+        type: "mrkdwn",
+        text: `*Status*: enabled=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
+      });
+    }
+
+    blocks.push({ type: "context", elements: contextElements });
 
     if (idx < rows.length - 1) blocks.push({ type: "divider" });
   });
@@ -113,7 +121,7 @@ export async function startSlackSocket() {
     const sub = (command.text || "").trim().toLowerCase();
     if (!sub || sub.startsWith("summ")) {
       const filter = parseCurrencies(command.text.replace(/^summ/i, ""));
-      await respond({ response_type: "in_channel", blocks: buildBlocks(filter) });
+      await respond({ response_type: "in_channel", blocks: await buildBlocks(filter) });
     } else {
       await respond({
         response_type: "ephemeral",
