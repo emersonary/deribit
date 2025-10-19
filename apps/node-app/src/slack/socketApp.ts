@@ -1,11 +1,13 @@
 import { App } from "@slack/bolt";
 import 'dotenv/config';
+import { getStatusInstruments } from "../state/status";
 
 // UPDATED import: use the per-currency store
 import {
   getAllLastAccountSummaries,
   type Currency,
 } from "../state/lastAccountSummary";
+
 
 function fmt(n: number | null | undefined, locale = "en-US") {
   if (typeof n !== "number" || !Number.isFinite(n)) return "—";
@@ -29,7 +31,8 @@ function currencyFromInstrument(instrument: string): Currency {
  * Build Slack blocks for all (or a subset of) currencies.
  * Pass `filterCurrencies` like ["BTC"] to show only BTC.
  */
-function buildBlocks(filterCurrencies?: Currency[]) {
+async function buildBlocks(filterCurrencies?: Currency[]) {
+  const allStatuses = await getStatusInstruments();
   const all = getAllLastAccountSummaries() as Record<string, any>; // { "BTC-PERPETUAL": snap, ... }
 
   // project into { instrument, currency, snap }
@@ -57,8 +60,11 @@ function buildBlocks(filterCurrencies?: Currency[]) {
     { type: "header", text: { type: "plain_text", text: "Deribit – Latest Account Summary" } },
   ];
 
+
   rows.forEach(({ instrument, currency, snap }, idx) => {
     const ts = Math.floor(((snap?.updated_at ?? Date.now()) as number) / 1000);
+
+    const status = allStatuses.instruments?.[instrument] ?? null;
 
     blocks.push({
       type: "section",
@@ -72,17 +78,23 @@ function buildBlocks(filterCurrencies?: Currency[]) {
       ],
     });
 
-    blocks.push({
-      type: "context",
-      elements: [
-        {
-          type: "mrkdwn",
-          text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
-            snap?.updated_at ?? Date.now()
-          ).toISOString()}>`,
-        },
-      ],
-    });
+    const contextElements: any[] = [
+      {
+        type: "mrkdwn",
+        text: `*${currency}* · Last update: <!date^${ts}^{date_num} {time_secs}|${new Date(
+          snap?.updated_at ?? Date.now()
+        ).toISOString()}>`,
+      },
+    ];
+
+    if (status) {
+      contextElements.push({
+        type: "mrkdwn",
+        text: `*Status*: enabled=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
+      });
+    }
+
+    blocks.push({ type: "context", elements: contextElements });
 
     if (idx < rows.length - 1) blocks.push({ type: "divider" });
   });
