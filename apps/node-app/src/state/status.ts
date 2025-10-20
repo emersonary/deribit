@@ -69,6 +69,12 @@ export async function upsertStatusInstrument(
     [symbol, value.adj_enabled, value.adj_edge],
     client
   );
+
+  // Keep in-memory cache in sync
+  if (statusInstruments.instruments === null) {
+    statusInstruments.instruments = {};
+  }
+  statusInstruments.instruments[symbol] = { ...value };
 }
 
 export async function getStatusInstruments() {

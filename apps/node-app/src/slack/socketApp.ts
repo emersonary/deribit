@@ -1,7 +1,6 @@
 import { App } from "@slack/bolt";
 import "dotenv/config";
-import { getStatusInstruments } from "../state/status";
-import { upsertStatusInstrument } from "../db/statusInstrumentsRepo"; // ← repo upsert
+import { getStatusInstruments, upsertStatusInstrument } from "../state/status";
 
 // UPDATED import: use the per-currency store
 import {
