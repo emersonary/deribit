@@ -1,6 +1,7 @@
 import { App } from "@slack/bolt";
-import 'dotenv/config';
+import "dotenv/config";
 import { getStatusInstruments } from "../state/status";
+import { upsertStatusInstrument } from "../db/statusInstrumentsRepo"; // ← repo upsert
 
 // UPDATED import: use the per-currency store
 import {
@@ -26,6 +27,27 @@ function currencyFromInstrument(instrument: string): Currency {
   const [cur] = instrument.split("-");
   return (cur?.toUpperCase() ?? instrument) as Currency;
 }
+
+/** Parse "on/off/1/0/true/false/yes/no" into boolean; undefined if invalid. */
+function parseEnabledToken(tok: string | undefined): boolean | undefined {
+  if (!tok) return undefined;
+  const t = tok.toLowerCase();
+  if (["1", "on", "true", "yes", "y"].includes(t)) return true;
+  if (["0", "off", "false", "no", "n"].includes(t)) return false;
+  return undefined;
+}
+
+function parseCurrencies(input: string): Currency[] | undefined {
+  const t = input.trim().toUpperCase();
+  if (!t) return undefined;
+  const parts = t
+    .split(/\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const valid = parts.filter((p) => ["BTC", "ETH"].includes(p)); // extend if you add more
+  return valid.length ? (valid as Currency[]) : undefined;
+}
+
 /**
  * Build Slack blocks for all (or a subset of) currencies.
  * Pass `filterCurrencies` like ["BTC"] to show only BTC.
@@ -51,11 +73,19 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
     );
 
   if (rows.length === 0) {
-    return [{ type: "section", text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." } }];
+    return [
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: ":grey_question: No snapshot yet." },
+      },
+    ];
   }
 
   const blocks: any[] = [
-    { type: "header", text: { type: "plain_text", text: "Deribit – Latest Account Summary" } },
+    {
+      type: "header",
+      text: { type: "plain_text", text: "Deribit – Latest Account Summary" },
+    },
   ];
 
   rows.forEach(({ instrument, currency, snap }, idx) => {
@@ -83,14 +113,11 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
           snap?.updated_at ?? Date.now()
         ).toISOString()}>`,
       },
-    ];
-
-    if (status) {
-      contextElements.push({
+      {
         type: "mrkdwn",
-        text: `*Status*: enabled=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
-      });
-    }
+        text: `*Status*: adjustment=${status.adj_enabled ? "✅" : "❌"}, edge=${status.adj_edge}`,
+      },
+    ];
 
     blocks.push({ type: "context", elements: contextElements });
 
@@ -100,35 +127,93 @@ async function buildBlocks(filterCurrencies?: Currency[]) {
   return blocks;
 }
 
-function parseCurrencies(input: string): Currency[] | undefined {
-  const t = input.trim().toUpperCase();
-  if (!t) return undefined;
-  const parts = t.split(/\s+/).map(s => s.trim()).filter(Boolean);
-  const valid = parts.filter(p => ["BTC", "ETH"].includes(p)); // extend if you add more
-  return valid.length ? (valid as Currency[]) : undefined;
-}
-
 export async function startSlackSocket() {
   const app = new App({
-    token: process.env.SLACK_BOT_TOKEN,     // xoxb-...
-    appToken: process.env.SLACK_APP_TOKEN,  // xapp-...
+    token: process.env.SLACK_BOT_TOKEN, // xoxb-...
+    appToken: process.env.SLACK_APP_TOKEN, // xapp-...
     socketMode: true,
   });
 
-  // Slash: /deribit summ [BTC|ETH]
+  // Slash: /deribit ...
   app.command("/deribit", async ({ command, ack, respond }) => {
     await ack();
-    console.log("responding " + command.text + " slack command");
-    const sub = (command.text || "").trim().toLowerCase();
+    const raw = (command.text || "").trim();
+    const sub = raw.toLowerCase();
+
+    // /deribit adj enabled <value> [CURRENCY]
+    if (sub.startsWith("adj enabled")) {
+      try {
+        const parts = raw.split(/\s+/); // keep original case for currency
+        // parts: ["adj", "enabled", "<value>", "[CURRENCY]?"]
+        const valueTok = parts[2];
+        const maybeCur = (parts[3] || "BTC").toUpperCase(); // default BTC if omitted
+        const enabled = parseEnabledToken(valueTok);
+
+        if (enabled === undefined) {
+          return respond({
+            response_type: "ephemeral",
+            text:
+              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> [CURRENCY]`\n" +
+              "Examples: `/deribit adj enabled 1`, `/deribit adj enabled off ETH`",
+          });
+        }
+
+        // Validate currency (extend as needed)
+        const currency: Currency = (["BTC", "ETH"].includes(maybeCur)
+          ? maybeCur
+          : "BTC") as Currency;
+
+        const symbol = instrumentOf(currency);
+
+        // Preserve current edge if present
+        const si = await getStatusInstruments();
+        const existing = si.instruments?.[symbol] ?? null;
+        const adj_edge = existing?.adj_edge ?? 0;
+
+        // Upsert in DB
+        await upsertStatusInstrument(symbol, {
+          adj_enabled: enabled,
+          adj_edge,
+        });
+
+        // Update in-memory cache immediately
+        if (!si.instruments) {
+          si.instruments = {};
+        }
+        si.instruments[symbol] = { adj_enabled: enabled, adj_edge };
+
+        return respond({
+          response_type: "in_channel",
+          text: `Adjustment status updated: \`${symbol}\` → enabled=${enabled ? "on" : "off"}`,
+        });
+      } catch (err: any) {
+        console.error("adj enabled failed:", err);
+        return respond({
+          response_type: "ephemeral",
+          text: `Failed to update adjustment status: ${err?.message ?? "unknown error"}`,
+        });
+      }
+    }
+
+    // Default (or summary): /deribit summ [BTC|ETH]
     if (!sub || sub.startsWith("summ")) {
-      const filter = parseCurrencies(command.text.replace(/^summ/i, ""));
-      await respond({ response_type: "in_channel", blocks: await buildBlocks(filter) });
-    } else {
-      await respond({
-        response_type: "ephemeral",
-        text: "Usage: `/deribit summ [BTC|ETH]`",
+      const filter = parseCurrencies(raw.replace(/^summ/i, ""));
+      const blocks = await buildBlocks(filter);
+      return respond({
+        response_type: "in_channel",
+        text: "Deribit – Latest Account Summary",
+        blocks,
       });
     }
+
+    // Help
+    return respond({
+      response_type: "ephemeral",
+      text:
+        "Usage:\n" +
+        "• `/deribit summ [BTC|ETH]`\n" +
+        "• `/deribit adj enabled <on|off|1|0|true|false|yes|no> [CURRENCY]`",
+    });
   });
 
   // Mentions: @DeribitBot summ [BTC|ETH]
@@ -137,9 +222,15 @@ export async function startSlackSocket() {
     if (text.includes("summ")) {
       const after = text.replace(/.*summ/i, ""); // words after 'summ'
       const filter = parseCurrencies(after);
-      await say({ blocks: buildBlocks(filter) });
+      const blocks = await buildBlocks(filter); // await the async builder
+      await say({
+        text: "Deribit – Latest Account Summary",
+        blocks,
+      });
     } else {
-      await say("Try `summ`.");
+      await say(
+        "Try `summ` or use the slash command: `/deribit adj enabled <on|off|1|0|true|false|yes|no> [CURRENCY]`"
+      );
     }
   });
 
