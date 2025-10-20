@@ -10,6 +10,7 @@ import { query, closePool } from "./db";
 import { sendSlackMessage } from "./slack";
 import { setLastAccountSummary } from "./state/lastAccountSummary";
 import { formatCurrency } from "./utils";
+import { getStatusInstruments } from "./state/status";
 
 // --- types for safer reads ---
 type UpsertRow = { func_upsert_account_snapshot?: number };
@@ -104,9 +105,14 @@ async function deribitVerificationCycle(blockOrders: boolean) {
         diff.toFixed(2)
       );
 
-      if (!blockOrders) {
+      const allStatuses = await getStatusInstruments();
+      const rawStatus = allStatuses.instruments?.[instrument] ?? null;
+      const status = rawStatus ?? { adj_enabled: false, adj_edge: 0 };
+
+      if (!blockOrders && status.adj_enabled) {
+
         // Hedge logic (unchanged), per-currency + per-instrument
-        if (diff < -0.3) {
+        if (diff < -status.adj_edge) {
           // If you keep the old helpers, change this to:
           // if (currency === "BTC") { const orderId = await buyFutureBTC(Math.abs(diff)); ... }
           const orderId = await buyFuture(instrument, Math.abs(diff));
@@ -121,7 +127,7 @@ async function deribitVerificationCycle(blockOrders: boolean) {
           );
           console.log(`[${currency}] Buy Order ID:`, orderId, "qty:", Math.abs(diff));
           await sleep(5_000);
-        } else if (diff > +0.3) {
+        } else if (diff > +status.adj_edge) {
           // If you keep the old helpers, change this to:
           // if (currency === "BTC") { const orderId = await sellFutureBTC(Math.abs(diff)); ... }
           const orderId = await sellFuture(instrument, Math.abs(diff));
