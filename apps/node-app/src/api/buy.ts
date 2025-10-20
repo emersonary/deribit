@@ -2,6 +2,7 @@
 import { PrivateApi } from "@deribit/api/privateApi";
 
 import { getTicker } from "./getTicker";
+import 'dotenv/config';
 
 function getResult<T = any>(body: unknown): T {
   return (body as any)?.result as T;
@@ -9,14 +10,20 @@ function getResult<T = any>(body: unknown): T {
 
 export async function buyFuture(instrumentaName: string, btcValue: number): Promise<number | undefined> {
   try {
+    const HOST = process.env.DERIBIT_HOST ?? "test.deribit.com";
+    const BASE = `https://${HOST}/api/v2`;
+    const CLIENT_ID = process.env.DERIBIT_CLIENT_ID!;
+    const CLIENT_SECRET = process.env.DERIBIT_CLIENT_SECRET!
+    const SCOPE = process.env.DERIBIT_SCOPE ?? "session:node-app account:read wallet:read";
+
     const ticker = await getTicker(instrumentaName);
     const usdValue = Math.max(10, Math.floor(ticker.last_price * btcValue / 10) * 10);
     // Create the API client
-    const api = new PrivateApi("https://test.deribit.com/api/v2");
+    const api = new PrivateApi(BASE);
 
     // (Optional) set username/password if you are using basic auth
-    api.username = "vPgITnPm";
-    api.password = "AnePRa5g8-_VtbfRsraYS4VVBmbN0WilvMuRr_84sgE";
+    api.username = CLIENT_ID;
+    api.password = CLIENT_SECRET;
 
     // Example: Buy 10 contracts of BTC-PERPETUAL as a market order
     const { body } = await api.privateBuyGet(
