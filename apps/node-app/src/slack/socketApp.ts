@@ -139,29 +139,37 @@ export async function startSlackSocket() {
     const raw = (command.text || "").trim();
     const sub = raw.toLowerCase();
 
-    // /deribit adj enabled <value> [CURRENCY]
+    // /deribit adj enabled <value> <CURRENCY>
     if (sub.startsWith("adj enabled")) {
       try {
-        const parts = raw.split(/\s+/); // keep original case for currency
-        // parts: ["adj", "enabled", "<value>", "[CURRENCY]?"]
-        const valueTok = parts[2];
-        const maybeCur = (parts[3] || "BTC").toUpperCase(); // default BTC if omitted
-        const enabled = parseEnabledToken(valueTok);
+        const parts = raw.split(/\s+/); // ["adj", "enabled", "<value>", "<CURRENCY>"]
 
+        const valueTok = parts[2];
+        const curTok = (parts[3] || "").toUpperCase();
+
+        // Parse enabled flag
+        const enabled = parseEnabledToken(valueTok);
         if (enabled === undefined) {
           return respond({
             response_type: "ephemeral",
             text:
-              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> [CURRENCY]`\n" +
-              "Examples: `/deribit adj enabled 1`, `/deribit adj enabled off ETH`",
+              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> <CURRENCY>`\n" +
+              "Example: `/deribit adj enabled 1 BTC`",
           });
         }
 
-        // Validate currency (extend as needed)
-        const currency: Currency = (["BTC", "ETH"].includes(maybeCur)
-          ? maybeCur
-          : "BTC") as Currency;
+        // Require currency argument
+        if (!curTok || !["BTC", "ETH"].includes(curTok)) {
+          return respond({
+            response_type: "ephemeral",
+            text:
+              "You must specify a valid currency.\n" +
+              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> <CURRENCY>`\n" +
+              "Valid currencies: BTC, ETH",
+          });
+        }
 
+        const currency: Currency = curTok as Currency;
         const symbol = instrumentOf(currency);
 
         // Preserve current edge if present
@@ -193,6 +201,7 @@ export async function startSlackSocket() {
         });
       }
     }
+
 
     // Default (or summary): /deribit summ [BTC|ETH]
     if (!sub || sub.startsWith("summ")) {
