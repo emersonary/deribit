@@ -134,44 +134,44 @@ export async function startSlackSocket() {
     const raw = (command.text || "").trim();
     const sub = raw.toLowerCase();
 
-    // /deribit adj enabled <value> <EDGE> <CURRENCY>
-    if (sub.startsWith("adj enabled")) {
+    // /deribit adj <value> <EDGE> <CURRENCY>
+    if (sub.startsWith("adj ")) {
       try {
-        // ["adj", "enabled", "<value>", "<EDGE>", "<CURRENCY>"]
+        // ["adj", "<value>", "<EDGE>", "<CURRENCY>"]
         const parts = raw.split(/\s+/);
-        const valueTok = parts[2];
-        const edgeTok = parts[3];
-        const curTok = (parts[4] || "").toUpperCase();
+        const valueTok = parts[1];
+        const edgeTok = parts[2];
+        const curTok = (parts[3] || "").toUpperCase();
 
-        // enabled flag
+        // enabled flag required
         const enabled = parseEnabledToken(valueTok);
         if (enabled === undefined) {
           return respond({
             response_type: "ephemeral",
             text:
-              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`\n" +
-              "Example: `/deribit adj enabled 1 0.75 BTC`",
+              "Usage: `/deribit adj <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`\n" +
+              "Example: `/deribit adj 1 0.75 BTC`",
           });
         }
 
-        // edge (float) required
+        // EDGE required: finite number and non-negative
         const adj_edge = Number(edgeTok);
-        if (!Number.isFinite(adj_edge)) {
+        if (!Number.isFinite(adj_edge) || adj_edge < 0) {
           return respond({
             response_type: "ephemeral",
             text:
-              "EDGE must be a number.\n" +
-              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`",
+              "EDGE must be a non-negative number.\n" +
+              "Usage: `/deribit adj <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`",
           });
         }
 
-        // currency required and validated
+        // CURRENCY required and validated
         if (!curTok || !["BTC", "ETH"].includes(curTok)) {
           return respond({
             response_type: "ephemeral",
             text:
               "You must specify a valid currency.\n" +
-              "Usage: `/deribit adj enabled <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`\n" +
+              "Usage: `/deribit adj <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`\n" +
               "Valid currencies: BTC, ETH",
           });
         }
@@ -192,7 +192,7 @@ export async function startSlackSocket() {
           text: `Adjustment updated: \`${symbol}\` → enabled=${enabled ? "on" : "off"}, edge=${adj_edge}`,
         });
       } catch (err: any) {
-        console.error("adj enabled failed:", err);
+        console.error("adj failed:", err);
         return respond({
           response_type: "ephemeral",
           text: `Failed to update adjustment: ${err?.message ?? "unknown error"}`,
@@ -217,7 +217,7 @@ export async function startSlackSocket() {
       text:
         "Usage:\n" +
         "• `/deribit summ [BTC|ETH]`\n" +
-        "• `/deribit adj enabled <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`",
+        "• `/deribit adj <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`",
     });
   });
 
@@ -234,7 +234,7 @@ export async function startSlackSocket() {
       });
     } else {
       await say(
-        "Try `summ` or use: `/deribit adj enabled <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`"
+        "Try `summ` or `/deribit adj <on|off|1|0|true|false|yes|no> <EDGE> <CURRENCY>`"
       );
     }
   });

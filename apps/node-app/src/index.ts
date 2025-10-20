@@ -22,7 +22,8 @@ type AccountSummary = { currency: string; delta_total: number; equity: number };
 // Run a task exactly at the start of every minute, even if the previous one overlaps.
 export async function scheduleNextMinuteOverlap(blockOrders: boolean) {
   const now = Date.now();
-  const next = Math.ceil(now / 60_000) * 60_000;
+  const interval = 30_000
+  const next = Math.ceil(now / interval) * interval;
   const delay = next - now;
   setTimeout(() => {
     deribitVerificationCycle(blockOrders).catch((e) => console.error("cycle error:", e));
