@@ -29,7 +29,7 @@ git reset --hard origin/main
 
 # --- Install & build at the monorepo root ---
 # Supports npm workspaces; falls back to plain npm if no workspaces.
-if command -v corepack >/dev/null 2>&1; then corepack enable || true; fi
+if command -v corepack >/dev/null 2>&1; then sudo corepack enable || true; fi
 
 if [ -f pnpm-lock.yaml ] && command -v pnpm >/dev/null 2>&1; then
   pnpm install --frozen-lockfile
