@@ -14,7 +14,6 @@ export async function buyFuture(instrumentaName: string, btcValue: number): Prom
     const BASE = `https://${HOST}/api/v2`;
     const CLIENT_ID = process.env.DERIBIT_CLIENT_ID!;
     const CLIENT_SECRET = process.env.DERIBIT_CLIENT_SECRET!
-    const SCOPE = process.env.DERIBIT_SCOPE ?? "session:node-app account:read wallet:read";
 
     const ticker = await getTicker(instrumentaName);
     const usdValue = Math.max(10, Math.floor(ticker.last_price * btcValue / 10) * 10);

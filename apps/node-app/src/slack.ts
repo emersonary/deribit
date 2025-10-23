@@ -28,7 +28,7 @@ export async function sendSlackMessage(orderType: string, orderId: number, instr
   // Add an attachment
   const att = msg.listaAttachment.add();
   att.text = "Order ID: " + orderId +
-    "\nAmount (BTC): " + formatCurrency(qty) +
+    "\nAmount (" + instrumentName.slice(0, 3) + "): " + formatCurrency(qty) +
     "\nTriggering Delta: " + formatCurrency(amount) +
     "\nFill Price (USD): " + formatCurrency(fillPrice) +
     "\nPrevious Equity (USD): " + formatCurrency(Math.round(equity * fillPrice * 100) / 100);
