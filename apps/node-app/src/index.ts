@@ -20,16 +20,29 @@ const INSTRUMENT = (c: Currency) => `${c}-PERPETUAL` as const;
 type Ticker = { last_price?: number };
 type AccountSummary = { currency: string; delta_total: number; equity: number };
 
-// Run a task exactly at the start of every minute, even if the previous one overlaps.
-export async function scheduleNextMinuteOverlap(blockOrders: boolean) {
+// Run exactly on a 30s grid, but never overlap.
+export function scheduleNextMinuteOverlap(blockOrders: boolean) {
+  const INTERVAL_MS = 30_000;
+
+  const run = async () => {
+    try {
+      await deribitVerificationCycle(blockOrders); // <- await prevents overlap
+    } catch (e) {
+      console.error("cycle error:", e);
+    } finally {
+      // schedule next tick to the next 30s boundary
+      const now = Date.now();
+      const next = Math.ceil(now / INTERVAL_MS) * INTERVAL_MS;
+      const delay = Math.max(0, next - now);
+      setTimeout(run, delay);
+    }
+  };
+
+  // first tick aligned to the next 30s boundary
   const now = Date.now();
-  const interval = 30_000
-  const next = Math.ceil(now / interval) * interval;
-  const delay = next - now;
-  setTimeout(() => {
-    deribitVerificationCycle(blockOrders).catch((e) => console.error("cycle error:", e));
-    scheduleNextMinuteOverlap(blockOrders);
-  }, delay);
+  const next = Math.ceil(now / INTERVAL_MS) * INTERVAL_MS;
+  const delay = Math.max(0, next - now);
+  setTimeout(run, delay);
 }
 
 function toLocalISOString(d: Date = new Date()): string {
